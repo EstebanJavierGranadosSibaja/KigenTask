@@ -37,6 +37,15 @@ npm run lint
 npm run build
 ```
 
+Desde la raiz del monorepo puedes usar:
+
+```bash
+npm --prefix front install
+npm --prefix front run dev
+npm --prefix front run lint
+npm --prefix front run build
+```
+
 ## Estructura relevante
 
 - `src/context/AuthContext.tsx`: proveedor de autenticacion y bootstrap de sesion

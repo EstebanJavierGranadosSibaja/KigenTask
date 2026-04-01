@@ -37,10 +37,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ usernameOrEmail, password }),
       })
 
+      const profile = await fetchProfile(authResponse.token)
       localStorage.setItem(TOKEN_STORAGE_KEY, authResponse.token)
       setToken(authResponse.token)
-
-      const profile = await fetchProfile(authResponse.token)
       setUser(profile)
     },
     [fetchProfile],

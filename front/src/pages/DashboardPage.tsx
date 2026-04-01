@@ -109,7 +109,7 @@ export function DashboardPage() {
           <div className="identity">
             <div className="avatar">{initials}</div>
             <div>
-              <p className="eyebrow">Authenticated session</p>
+              <p className="eyebrow">Workspace console</p>
               <h1>{user?.fullName || user?.username || 'KigenTask User'}</h1>
               <p className="hint">{user?.email}</p>
             </div>
@@ -123,14 +123,17 @@ export function DashboardPage() {
           <article className="stat-card">
             <p className="stat-label">Projects</p>
             <p className="stat-value">{projects.length}</p>
+            <p className="hint">Total linked to your account</p>
           </article>
           <article className="stat-card">
             <p className="stat-label">User status</p>
             <p className="stat-value">{user?.active ? 'Active' : 'Inactive'}</p>
+            <p className="hint">Permission to create and edit</p>
           </article>
           <article className="stat-card">
             <p className="stat-label">API base URL</p>
             <p className="stat-value mono">{API_BASE_URL}</p>
+            <p className="hint">Current environment endpoint</p>
           </article>
         </section>
 
@@ -191,9 +194,7 @@ export function DashboardPage() {
 
             {projectsLoading ? <p className="hint">Loading projects...</p> : null}
 
-            {!projectsLoading && projects.length === 0 ? (
-              <p className="hint">No projects yet, create the first one from this dashboard.</p>
-            ) : null}
+            {!projectsLoading && projects.length === 0 ? <p className="hint">No projects yet, create the first one from this dashboard.</p> : null}
 
             <ul className="project-list">
               {projects.map((project) => (

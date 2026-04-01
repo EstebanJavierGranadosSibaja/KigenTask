@@ -10,6 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./back/KigenTaskDB.sql:/docker-entrypoint-initdb.d/01-kigentask.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d kigentask"]
       interval: 10s
@@ -18,7 +19,7 @@ services:
 
   api:
     build:
-      context: .
+      context: ./back
       dockerfile: Dockerfile
     container_name: kigen-task-api
     environment:

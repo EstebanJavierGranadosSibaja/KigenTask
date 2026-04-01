@@ -166,14 +166,20 @@ public class AuthService {
             throw new UnauthorizedException("Invalid Google token");
         } catch (RestClientException ex) {
             throw new BadRequestException("Could not validate Google token");
+        } catch (RuntimeException ex) {
+            throw new UnauthorizedException("Invalid Google token");
         }
     }
 
     private void validateGoogleToken(GoogleTokenInfoResponse tokenInfo) {
+        String configuredClientId = googleOAuthProperties.getClientId();
+        if (configuredClientId == null || configuredClientId.isBlank()) {
+            throw new BadRequestException("Google sign-in is not configured on server");
+        }
         if (tokenInfo.email() == null || tokenInfo.email().isBlank()) {
             throw new UnauthorizedException("Google account email is required");
         }
-        if (!googleOAuthProperties.getClientId().equals(tokenInfo.aud())) {
+        if (!configuredClientId.equals(tokenInfo.aud())) {
             throw new UnauthorizedException("Google token audience mismatch");
         }
         if (!"true".equalsIgnoreCase(tokenInfo.emailVerified())) {

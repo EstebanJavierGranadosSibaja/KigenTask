@@ -42,13 +42,13 @@ Then open a new terminal and verify:
 
 - `mvn -v`
 
-  ## Environment Setup
+## Environment Setup
 
-  1. Create `back/.env` from `back/.env.example`.
-  2. Create `front/.env` from `front/.env.example`.
-  3. Use the same Google Client ID in both places:
-    - `GOOGLE_CLIENT_ID` in backend
-    - `VITE_GOOGLE_CLIENT_ID` in frontend
+- Create `back/.env` from `back/.env.example`.
+- Create `front/.env` from `front/.env.example`.
+- For Docker Compose, create root `.env` from `.env.example`.
+- Use the same Google Client ID in backend (`GOOGLE_CLIENT_ID`) and frontend (`VITE_GOOGLE_CLIENT_ID`).
+- Set `CORS_ALLOWED_ORIGINS` with your frontend URLs (comma-separated).
 
 ## Run Locally
 
@@ -66,17 +66,19 @@ Then open a new terminal and verify:
 From repository root:
 
 1. Copy `.env.example` to `.env` in repository root.
-2. `docker compose up --build -d`
-2. Services:
-  - Frontend on `http://localhost:5173`
-  - Backend API on `http://localhost:8080`
-  - PostgreSQL on `localhost:5432`
+1. `docker compose up --build -d`
+1. Services are available at `http://localhost:5173` (frontend), `http://localhost:8080` (backend API), and `localhost:5432` (PostgreSQL).
 
 Notes:
 
 - Compose now builds backend from `back/`.
 - Compose now builds frontend from `front/`.
 - Database schema is initialized from `back/KigenTaskDB.sql` on first DB startup.
+
+Optional demo data (all entities):
+
+- Run `Get-Content -Raw .\back\KigenTaskSeedData.sql | docker exec -i kigen-task-db psql -v ON_ERROR_STOP=1 -U postgres -d kigentask`
+- The script is idempotent, you can run it multiple times safely.
 
 Useful commands:
 

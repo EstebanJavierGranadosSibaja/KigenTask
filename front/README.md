@@ -5,6 +5,7 @@ Frontend base en React + TypeScript para consumir la API de KigenTask con autent
 ## Incluye
 
 - Login conectado a `/api/v1/auth/login`
+- Registro normal conectado a `/api/v1/auth/register`
 - Login con Google conectado a `/api/v1/auth/google`
 - Session bootstrap con token en `localStorage`
 - Ruta protegida para dashboard
@@ -23,6 +24,7 @@ Frontend base en React + TypeScript para consumir la API de KigenTask con autent
 1. Crear archivo `.env` tomando como base `.env.example`.
 2. Ajustar `VITE_API_BASE_URL` si el backend usa otro host o puerto.
 3. Configurar `VITE_GOOGLE_CLIENT_ID` con el Client ID Web de Google Cloud.
+4. En Google Cloud, agregar los origenes del frontend en "Authorized JavaScript origins": `http://localhost:5173` y `http://127.0.0.1:5173`.
 
 Ejemplo:
 

@@ -52,6 +52,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [startSession],
   )
 
+  const register = useCallback(
+    async (payload: {
+      username: string
+      email: string
+      password: string
+      fullName?: string
+    }) => {
+      const authResponse = await apiRequest<AuthResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: payload.username,
+          email: payload.email,
+          password: payload.password,
+          fullName: payload.fullName,
+        }),
+      })
+
+      await startSession(authResponse)
+    },
+    [startSession],
+  )
+
   const loginWithGoogle = useCallback(
     async (idToken: string) => {
       const authResponse = await apiRequest<AuthResponse>('/auth/google', {
@@ -105,10 +127,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       bootstrapping,
       login,
+      register,
       loginWithGoogle,
       logout,
     }),
-    [bootstrapping, login, loginWithGoogle, logout, token, user],
+    [bootstrapping, login, register, loginWithGoogle, logout, token, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,16 +1,100 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { API_BASE_URL } from '../lib/api'
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
 
   const [usernameOrEmail, setUsernameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() ?? ''
+  const googleButtonRef = useRef<HTMLDivElement | null>(null)
+
+  const handleGoogleCredential = useCallback(
+    async (credential?: string) => {
+      if (!credential) {
+        setError('Google sign-in did not return a credential')
+        return
+      }
+
+      setError(null)
+      setIsGoogleSubmitting(true)
+
+      try {
+        await loginWithGoogle(credential)
+        navigate('/dashboard', { replace: true })
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError('Could not sign in with Google')
+        }
+      } finally {
+        setIsGoogleSubmitting(false)
+      }
+    },
+    [loginWithGoogle, navigate],
+  )
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return
+    }
+
+    let active = true
+
+    const tryRenderGoogleButton = () => {
+      if (!active) {
+        return true
+      }
+
+      const container = googleButtonRef.current
+      const googleAccounts = window.google?.accounts?.id
+      if (!container || !googleAccounts) {
+        return false
+      }
+
+      googleAccounts.initialize({
+        client_id: googleClientId,
+        callback: (response) => {
+          void handleGoogleCredential(response.credential)
+        },
+      })
+
+      container.innerHTML = ''
+      googleAccounts.renderButton(container, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        width: 320,
+      })
+
+      return true
+    }
+
+    if (tryRenderGoogleButton()) {
+      return () => {
+        active = false
+      }
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (tryRenderGoogleButton()) {
+        window.clearInterval(intervalId)
+      }
+    }, 250)
+
+    return () => {
+      active = false
+      window.clearInterval(intervalId)
+    }
+  }, [googleClientId, handleGoogleCredential])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -86,9 +170,25 @@ export function LoginPage() {
 
             {error ? <p className="error-banner">{error}</p> : null}
 
-            <button className="primary-button" type="submit" disabled={isSubmitting}>
+            <button className="primary-button" type="submit" disabled={isSubmitting || isGoogleSubmitting}>
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
+
+            <div className="oauth-divider">
+              <span>or continue with</span>
+            </div>
+
+            {googleClientId ? (
+              <div className="google-signin-block">
+                <div ref={googleButtonRef} className="google-button-slot" />
+                {isGoogleSubmitting ? <p className="hint">Signing in with Google...</p> : null}
+              </div>
+            ) : (
+              <p className="hint">
+                Google sign-in is disabled in this environment, configure VITE_GOOGLE_CLIENT_ID
+                to enable it.
+              </p>
+            )}
           </form>
         </section>
       </section>

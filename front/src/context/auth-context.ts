@@ -6,6 +6,7 @@ export type AuthContextValue = {
   user: UserProfile | null
   bootstrapping: boolean
   login: (usernameOrEmail: string, password: string) => Promise<void>
+  loginWithGoogle: (idToken: string) => Promise<void>
   logout: () => void
 }
 

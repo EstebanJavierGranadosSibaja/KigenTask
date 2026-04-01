@@ -30,6 +30,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null)
   }, [])
 
+  const startSession = useCallback(
+    async (authResponse: AuthResponse) => {
+      const profile = await fetchProfile(authResponse.token)
+      localStorage.setItem(TOKEN_STORAGE_KEY, authResponse.token)
+      setToken(authResponse.token)
+      setUser(profile)
+    },
+    [fetchProfile],
+  )
+
   const login = useCallback(
     async (usernameOrEmail: string, password: string) => {
       const authResponse = await apiRequest<AuthResponse>('/auth/login', {
@@ -37,12 +47,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ usernameOrEmail, password }),
       })
 
-      const profile = await fetchProfile(authResponse.token)
-      localStorage.setItem(TOKEN_STORAGE_KEY, authResponse.token)
-      setToken(authResponse.token)
-      setUser(profile)
+      await startSession(authResponse)
     },
-    [fetchProfile],
+    [startSession],
+  )
+
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      const authResponse = await apiRequest<AuthResponse>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ idToken }),
+      })
+
+      await startSession(authResponse)
+    },
+    [startSession],
   )
 
   useEffect(() => {
@@ -86,9 +105,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       bootstrapping,
       login,
+      loginWithGoogle,
       logout,
     }),
-    [bootstrapping, login, logout, token, user],
+    [bootstrapping, login, loginWithGoogle, logout, token, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

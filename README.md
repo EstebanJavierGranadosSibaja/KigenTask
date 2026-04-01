@@ -16,7 +16,7 @@ KigenTask
 ### front
 
 - Tech: React 19, TypeScript, Vite, React Router
-- Auth flow: JWT login + protected dashboard route
+- Auth flow: JWT login, Google login, protected dashboard route
 - Main commands:
   - `npm --prefix front install`
   - `npm --prefix front run dev`
@@ -31,6 +31,14 @@ KigenTask
   - `mvn -f back/pom.xml spring-boot:run`
   - `mvn -f back/pom.xml test`
   - `./back/scripts/smoke-test.ps1`
+
+  ## Environment Setup
+
+  1. Create `back/.env` from `back/.env.example`.
+  2. Create `front/.env` from `front/.env.example`.
+  3. Use the same Google Client ID in both places:
+    - `GOOGLE_CLIENT_ID` in backend
+    - `VITE_GOOGLE_CLIENT_ID` in frontend
 
 ## Run Locally
 
@@ -62,6 +70,7 @@ Notes:
 - Auth:
   - `POST /api/v1/auth/register`
   - `POST /api/v1/auth/login`
+  - `POST /api/v1/auth/google`
 - Users:
   - `GET /api/v1/users/me`
 - Projects:

@@ -32,6 +32,16 @@ KigenTask
   - `mvn -f back/pom.xml test`
   - `./back/scripts/smoke-test.ps1`
 
+## Maven Installation (Windows)
+
+Recommended (winget):
+
+- `winget install Apache.Maven`
+
+Then open a new terminal and verify:
+
+- `mvn -v`
+
   ## Environment Setup
 
   1. Create `back/.env` from `back/.env.example`.
@@ -55,15 +65,24 @@ KigenTask
 
 From repository root:
 
-1. `docker compose up --build -d`
+1. Copy `.env.example` to `.env` in repository root.
+2. `docker compose up --build -d`
 2. Services:
-   - PostgreSQL on `localhost:5432`
-   - Backend API on `localhost:8080`
+  - Frontend on `http://localhost:5173`
+  - Backend API on `http://localhost:8080`
+  - PostgreSQL on `localhost:5432`
 
 Notes:
 
 - Compose now builds backend from `back/`.
+- Compose now builds frontend from `front/`.
 - Database schema is initialized from `back/KigenTaskDB.sql` on first DB startup.
+
+Useful commands:
+
+- `docker compose logs -f api`
+- `docker compose logs -f front`
+- `docker compose down`
 
 ## API Summary
 
@@ -91,3 +110,17 @@ Notes:
 - Keep frontend-only dependencies in `front/package.json`.
 - Keep backend runtime and tooling in `back/pom.xml`.
 - Prefer root-level orchestration commands (`npm --prefix front ...`, `mvn -f back/pom.xml ...`) for CI and scripts.
+
+## Deployment Notes
+
+Current state:
+
+- Full stack is dockerized for local and server execution.
+- Register/login (credentials) and login with Google are available.
+
+Minimum production checklist before deploy:
+
+- Move from `ddl-auto: update` to managed migrations (Flyway/Liquibase).
+- Use strong secrets for JWT and database.
+- Set production Google OAuth origins and consent screen.
+- Add HTTPS reverse proxy (Nginx/Traefik) and domain.

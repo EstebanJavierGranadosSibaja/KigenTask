@@ -1,6 +1,7 @@
 package com.kigentask.dto.task;
 
 import com.kigentask.model.TaskPriority;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,6 +20,7 @@ public record CreateTaskRequest(
 
         Long assigneeUserId,
         TaskPriority priority,
+        @FutureOrPresent(message = "dueDate must be today or a future date")
         LocalDate dueDate
 ) {
 }

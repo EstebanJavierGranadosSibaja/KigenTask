@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppAlert } from '../components/AppAlert'
 import { useAuth } from '../context/useAuth'
-import { API_BASE_URL } from '../lib/api'
 
 type AuthMode = 'login' | 'register'
+
+const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,50}$/
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,100}$/
 
 export function LoginPage() {
   const { login, register, loginWithGoogle } = useAuth()
@@ -30,10 +33,17 @@ export function LoginPage() {
     setError(null)
   }
 
+  function mapErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error && error.message.trim()) {
+      return error.message
+    }
+    return fallback
+  }
+
   const handleGoogleCredential = useCallback(
     async (credential?: string) => {
       if (!credential) {
-        setError('Google sign-in did not return a credential')
+        setError('Google sign-in did not return a valid credential')
         return
       }
 
@@ -44,11 +54,7 @@ export function LoginPage() {
         await loginWithGoogle(credential)
         navigate('/dashboard', { replace: true })
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Could not sign in with Google')
-        }
+        setError(mapErrorMessage(err, 'Unable to sign in with Google right now'))
       } finally {
         setIsGoogleSubmitting(false)
       }
@@ -120,7 +126,7 @@ export function LoginPage() {
     try {
       if (!isRegisterMode) {
         if (!usernameOrEmail.trim() || !password.trim()) {
-          setError('Username/email and password are required')
+          setError('Enter your username or email, and password')
           return
         }
 
@@ -134,12 +140,17 @@ export function LoginPage() {
       const normalizedFullName = registerFullName.trim()
 
       if (!normalizedUsername || !normalizedEmail || !registerPassword.trim()) {
-        setError('Username, email and password are required to register')
+        setError('Username, email, and password are required')
         return
       }
 
-      if (registerPassword.length < 8) {
-        setError('Password must contain at least 8 characters')
+      if (!USERNAME_PATTERN.test(normalizedUsername)) {
+        setError('Username must be 3-50 characters and use only letters, numbers, or underscore')
+        return
+      }
+
+      if (!PASSWORD_PATTERN.test(registerPassword)) {
+        setError('Password must include uppercase, lowercase, number, and symbol')
         return
       }
 
@@ -156,11 +167,7 @@ export function LoginPage() {
       })
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError(isRegisterMode ? 'Could not create account' : 'Could not sign in')
-      }
+      setError(mapErrorMessage(err, isRegisterMode ? 'Unable to create your account' : 'Unable to sign in'))
     } finally {
       setIsSubmitting(false)
     }
@@ -170,18 +177,21 @@ export function LoginPage() {
     <main className="screen login-screen">
       <section className="panel login-shell">
         <aside className="login-aside">
-          <p className="eyebrow">KigenTask Platform</p>
-          <h1>Workspace control room</h1>
+          <p className="eyebrow">KigenTask Workspace</p>
+          <h1>Organize work that actually moves</h1>
           <p className="hint">
-            Manage projects, tasks and comments from a single JWT-secured dashboard connected to the
-            API in real time.
+            Plan projects, track tasks, and share progress updates from one clean workspace.
           </p>
           <ul className="feature-list">
-            <li>JWT authentication and protected routes</li>
-            <li>Project creation and listing</li>
-            <li>Ready to evolve with tasks and comments</li>
+            <li>Secure access with credentials or Google</li>
+            <li>Project, task, and comment workflow in one place</li>
+            <li>Built for desktop and mobile productivity</li>
           </ul>
-          <p className="api-chip">API {API_BASE_URL}</p>
+          <div className="trust-strip">
+            <span className="trust-chip">JWT secured</span>
+            <span className="trust-chip">Google ready</span>
+            <span className="trust-chip">Fast workspace UI</span>
+          </div>
         </aside>
 
         <section className="login-panel">
@@ -258,6 +268,10 @@ export function LoginPage() {
                   />
                 </label>
 
+                <p className="hint compact">
+                  Use at least 8 characters including uppercase, lowercase, number, and symbol.
+                </p>
+
                 <label className="field">
                   <span>Confirm password</span>
                   <input
@@ -295,7 +309,7 @@ export function LoginPage() {
               </>
             )}
 
-            {error ? <p className="error-banner">{error}</p> : null}
+            {error ? <AppAlert variant="error" title="Action required" message={error} onClose={() => setError(null)} /> : null}
 
             <button className="primary-button" type="submit" disabled={isSubmitting || isGoogleSubmitting}>
               {isSubmitting ? (isRegisterMode ? 'Creating account...' : 'Signing in...') : isRegisterMode ? 'Create account' : 'Sign in'}
@@ -318,17 +332,23 @@ export function LoginPage() {
               <div className="google-signin-block">
                 <div ref={googleButtonRef} className="google-button-slot" />
                 {isGoogleSubmitting ? <p className="hint">Signing in with Google...</p> : null}
-                <p className="hint oauth-help">
-                  If Google shows invalid_client or no registered origin, add{' '}
-                  <span className="mono-inline">{currentOrigin}</span> to Authorized JavaScript origins
-                  in your Google Cloud OAuth client.
-                </p>
+                <AppAlert
+                  variant="info"
+                  title="Google sign-in setup"
+                  message={
+                    <>
+                      If Google shows <strong>invalid_client</strong> or <strong>no registered origin</strong>,
+                      add <span className="mono-inline">{currentOrigin}</span> to Authorized JavaScript origins.
+                    </>
+                  }
+                />
               </div>
             ) : (
-              <p className="hint">
-                Google sign-in is disabled in this environment, configure VITE_GOOGLE_CLIENT_ID
-                to enable it.
-              </p>
+              <AppAlert
+                variant="warning"
+                title="Google login disabled"
+                message="Set VITE_GOOGLE_CLIENT_ID in your frontend environment to enable Google sign-in."
+              />
             )}
           </form>
         </section>

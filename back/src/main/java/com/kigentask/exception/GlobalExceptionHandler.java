@@ -1,6 +1,7 @@
 package com.kigentask.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -51,13 +52,51 @@ public class GlobalExceptionHandler {
                 return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
         }
 
-        @ExceptionHandler({
-                        BadRequestException.class,
-                        MethodArgumentTypeMismatchException.class,
-                        HttpMessageNotReadableException.class
-        })
-        public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex, HttpServletRequest request) {
+        @ExceptionHandler(BadRequestException.class)
+        public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
                 return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+        }
+
+        @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+        public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+                        MethodArgumentTypeMismatchException ex,
+                        HttpServletRequest request
+        ) {
+                String parameter = ex.getName() == null || ex.getName().isBlank()
+                                ? "request parameter"
+                                : ex.getName();
+                return buildResponse(HttpStatus.BAD_REQUEST, "Invalid value for parameter " + parameter, request);
+        }
+
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ErrorResponse> handleMalformedRequestBody(
+                        HttpMessageNotReadableException ex,
+                        HttpServletRequest request
+        ) {
+                return buildResponse(HttpStatus.BAD_REQUEST, "Malformed JSON request body", request);
+        }
+
+        @ExceptionHandler(ConstraintViolationException.class)
+        public ResponseEntity<ErrorResponse> handleConstraintViolation(
+                        ConstraintViolationException ex,
+                        HttpServletRequest request
+        ) {
+                String message = ex.getConstraintViolations().stream()
+                                .map(violation -> {
+                                        String path = violation.getPropertyPath() == null
+                                                        ? "value"
+                                                        : violation.getPropertyPath().toString();
+                                        int lastDot = path.lastIndexOf('.');
+                                        String field = lastDot >= 0 ? path.substring(lastDot + 1) : path;
+                                        return field + ": " + violation.getMessage();
+                                })
+                                .collect(Collectors.joining(", "));
+
+                if (message.isBlank()) {
+                        message = "Validation failed";
+                }
+
+                return buildResponse(HttpStatus.BAD_REQUEST, message, request);
         }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

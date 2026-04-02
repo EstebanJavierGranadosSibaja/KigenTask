@@ -14,6 +14,8 @@ Frontend base en React + TypeScript para consumir la API de KigenTask con autent
   - CRUD de proyectos (`GET/POST/PUT/DELETE /api/v1/projects`)
   - CRUD de tareas por proyecto (`GET/POST/PUT/DELETE /api/v1/tasks`)
   - comentarios por tarea (`GET/POST /api/v1/tasks/{taskId}/comments`)
+- Alertas visuales propias y dialogos de confirmacion (sin alertas del navegador)
+- Validaciones de formularios alineadas con reglas del backend
 
 ## Requisitos
 

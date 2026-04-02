@@ -68,7 +68,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         String username = normalizeRequired(request.username(), "username");
-        String email = normalizeRequired(request.email(), "email");
+        String email = normalizeRequired(request.email(), "email").toLowerCase(Locale.ROOT);
 
         if (userRepository.existsByUsername(username)) {
             throw new ConflictException("Username is already in use");
@@ -191,7 +191,7 @@ public class AuthService {
         Role defaultRole = roleRepository.findByName(DEFAULT_ROLE_NAME)
                 .orElseThrow(() -> new NotFoundException("Default role ROLE_USER not found"));
 
-        String email = tokenInfo.email().trim();
+        String email = tokenInfo.email().trim().toLowerCase(Locale.ROOT);
 
         User user = new User();
         user.setEmail(email);

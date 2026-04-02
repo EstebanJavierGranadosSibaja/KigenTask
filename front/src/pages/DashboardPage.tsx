@@ -1,11 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppAlert, type AlertVariant } from '../components/AppAlert'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useAuth } from '../context/useAuth'
 import { apiRequest } from '../lib/api'
 import type { Project, Task, TaskComment, TaskPriority, TaskStatus } from '../types/api'
 
 const TASK_STATUS_OPTIONS: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'CANCELLED']
 const TASK_PRIORITY_OPTIONS: TaskPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+
+type NoticeState = {
+  variant: AlertVariant
+  title?: string
+  message: string
+} | null
+
+type ConfirmState = {
+  kind: 'project' | 'task'
+  id: number
+  title: string
+  message: string
+} | null
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   TODO: 'To do',
@@ -33,6 +48,21 @@ function formatDateLabel(value: string | null) {
   }
 
   return date.toLocaleDateString()
+}
+
+function formatDateTimeLabel(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'Just now'
+  }
+  return date.toLocaleString()
+}
+
+function mapErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+  return fallback
 }
 
 export function DashboardPage() {
@@ -67,6 +97,9 @@ export function DashboardPage() {
   const [commentsError, setCommentsError] = useState<string | null>(null)
   const [commentContent, setCommentContent] = useState('')
   const [commentSubmitting, setCommentSubmitting] = useState(false)
+  const [notice, setNotice] = useState<NoticeState>(null)
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null)
+  const [confirmSubmitting, setConfirmSubmitting] = useState(false)
 
   const initials = useMemo(() => {
     if (!user?.username) {
@@ -96,6 +129,24 @@ export function DashboardPage() {
   )
 
   const isEditingProject = editingProjectId !== null
+
+  function showNotice(variant: AlertVariant, message: string, title?: string) {
+    setNotice({ variant, message, title })
+  }
+
+  useEffect(() => {
+    if (!notice) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setNotice(null)
+    }, 4200)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [notice])
 
   function resetProjectForm() {
     setProjectName('')
@@ -127,11 +178,7 @@ export function DashboardPage() {
         return result[0].id
       })
     } catch (err) {
-      if (err instanceof Error) {
-        setProjectsError(err.message)
-      } else {
-        setProjectsError('Could not load projects')
-      }
+      setProjectsError(mapErrorMessage(err, 'We could not load your projects. Please refresh.'))
     } finally {
       setProjectsLoading(false)
     }
@@ -167,11 +214,7 @@ export function DashboardPage() {
         return result[0].id
       })
     } catch (err) {
-      if (err instanceof Error) {
-        setTasksError(err.message)
-      } else {
-        setTasksError('Could not load tasks')
-      }
+      setTasksError(mapErrorMessage(err, 'We could not load project tasks. Please refresh.'))
     } finally {
       setTasksLoading(false)
     }
@@ -195,11 +238,7 @@ export function DashboardPage() {
       const result = await apiRequest<TaskComment[]>(`/tasks/${selectedTaskId}/comments`, { method: 'GET' }, token)
       setComments(result)
     } catch (err) {
-      if (err instanceof Error) {
-        setCommentsError(err.message)
-      } else {
-        setCommentsError('Could not load comments')
-      }
+      setCommentsError(mapErrorMessage(err, 'We could not load comments for this task.'))
     } finally {
       setCommentsLoading(false)
     }
@@ -220,7 +259,7 @@ export function DashboardPage() {
     const normalizedKey = projectKey.trim().toUpperCase()
 
     if (!normalizedName || !normalizedKey) {
-      setProjectsError('Name and key are required')
+      setProjectsError('Project name and key are required')
       return
     }
 
@@ -245,6 +284,7 @@ export function DashboardPage() {
         setProjects((current) => current.map((project) => (project.id === updated.id ? updated : project)))
         setSelectedProjectId(updated.id)
         resetProjectForm()
+        showNotice('success', 'Project updated successfully')
       } else {
         const created = await apiRequest<Project>(
           '/projects',
@@ -262,13 +302,12 @@ export function DashboardPage() {
         setProjects((current) => [created, ...current])
         setSelectedProjectId(created.id)
         resetProjectForm()
+        showNotice('success', 'Project created successfully')
       }
     } catch (err) {
-      if (err instanceof Error) {
-        setProjectsError(err.message)
-      } else {
-        setProjectsError(isEditingProject ? 'Could not update project' : 'Could not create project')
-      }
+      setProjectsError(
+        mapErrorMessage(err, isEditingProject ? 'Unable to update this project' : 'Unable to create this project'),
+      )
     } finally {
       setProjectSubmitting(false)
     }
@@ -283,34 +322,14 @@ export function DashboardPage() {
   }
 
   async function handleDeleteProject(projectId: number) {
-    if (!token) {
-      return
-    }
-
-    if (!window.confirm('Delete this project and all its tasks/comments?')) {
-      return
-    }
-
-    setProjectActionId(projectId)
-    setProjectsError(null)
-
-    try {
-      await apiRequest<void>(`/projects/${projectId}`, { method: 'DELETE' }, token)
-      setProjects((current) => current.filter((project) => project.id !== projectId))
-      setSelectedProjectId((current) => (current === projectId ? null : current))
-
-      if (editingProjectId === projectId) {
-        resetProjectForm()
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setProjectsError(err.message)
-      } else {
-        setProjectsError('Could not delete project')
-      }
-    } finally {
-      setProjectActionId(null)
-    }
+    const target = projects.find((project) => project.id === projectId)
+    const targetName = target?.name ?? 'this project'
+    setConfirmState({
+      kind: 'project',
+      id: projectId,
+      title: 'Delete project',
+      message: `Delete ${targetName}? This action will also remove related tasks and comments.`,
+    })
   }
 
   async function handleCreateTask(event: React.FormEvent<HTMLFormElement>) {
@@ -352,12 +371,9 @@ export function DashboardPage() {
       setTaskDescription('')
       setTaskPriority('MEDIUM')
       setTaskDueDate('')
+      showNotice('success', 'Task created successfully')
     } catch (err) {
-      if (err instanceof Error) {
-        setTasksError(err.message)
-      } else {
-        setTasksError('Could not create task')
-      }
+      setTasksError(mapErrorMessage(err, 'Unable to create this task'))
     } finally {
       setTaskSubmitting(false)
     }
@@ -382,42 +398,23 @@ export function DashboardPage() {
       )
 
       setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)))
+      showNotice('info', 'Task updated')
     } catch (err) {
-      if (err instanceof Error) {
-        setTasksError(err.message)
-      } else {
-        setTasksError('Could not update task')
-      }
+      setTasksError(mapErrorMessage(err, 'Unable to update this task'))
     } finally {
       setTaskActionId(null)
     }
   }
 
   async function handleDeleteTask(taskId: number) {
-    if (!token) {
-      return
-    }
-
-    if (!window.confirm('Delete this task?')) {
-      return
-    }
-
-    setTaskActionId(taskId)
-    setTasksError(null)
-
-    try {
-      await apiRequest<void>(`/tasks/${taskId}`, { method: 'DELETE' }, token)
-      setTasks((current) => current.filter((task) => task.id !== taskId))
-      setSelectedTaskId((current) => (current === taskId ? null : current))
-    } catch (err) {
-      if (err instanceof Error) {
-        setTasksError(err.message)
-      } else {
-        setTasksError('Could not delete task')
-      }
-    } finally {
-      setTaskActionId(null)
-    }
+    const target = tasks.find((task) => task.id === taskId)
+    const targetTitle = target?.title ?? 'this task'
+    setConfirmState({
+      kind: 'task',
+      id: taskId,
+      title: 'Delete task',
+      message: `Delete ${targetTitle}? This action cannot be undone.`,
+    })
   }
 
   async function handleAddComment(event: React.FormEvent<HTMLFormElement>) {
@@ -448,14 +445,56 @@ export function DashboardPage() {
 
       setComments((current) => [...current, created])
       setCommentContent('')
+      showNotice('success', 'Comment added')
     } catch (err) {
-      if (err instanceof Error) {
-        setCommentsError(err.message)
-      } else {
-        setCommentsError('Could not add comment')
-      }
+      setCommentsError(mapErrorMessage(err, 'Unable to add your comment'))
     } finally {
       setCommentSubmitting(false)
+    }
+  }
+
+  async function handleConfirmAction() {
+    if (!token || !confirmState) {
+      return
+    }
+
+    const action = confirmState
+    setConfirmSubmitting(true)
+    setProjectsError(null)
+    setTasksError(null)
+
+    try {
+      if (action.kind === 'project') {
+        setProjectActionId(action.id)
+        await apiRequest<void>(`/projects/${action.id}`, { method: 'DELETE' }, token)
+        setProjects((current) => current.filter((project) => project.id !== action.id))
+        setSelectedProjectId((current) => (current === action.id ? null : current))
+
+        if (editingProjectId === action.id) {
+          resetProjectForm()
+        }
+
+        showNotice('success', 'Project deleted successfully')
+      } else {
+        setTaskActionId(action.id)
+        await apiRequest<void>(`/tasks/${action.id}`, { method: 'DELETE' }, token)
+        setTasks((current) => current.filter((task) => task.id !== action.id))
+        setSelectedTaskId((current) => (current === action.id ? null : current))
+        showNotice('success', 'Task deleted successfully')
+      }
+
+      setConfirmState(null)
+    } catch (err) {
+      const message = mapErrorMessage(err, action.kind === 'project' ? 'Unable to delete this project' : 'Unable to delete this task')
+      if (action.kind === 'project') {
+        setProjectsError(message)
+      } else {
+        setTasksError(message)
+      }
+    } finally {
+      setConfirmSubmitting(false)
+      setProjectActionId(null)
+      setTaskActionId(null)
     }
   }
 
@@ -471,8 +510,8 @@ export function DashboardPage() {
           <div className="identity">
             <div className="avatar">{initials}</div>
             <div>
-              <p className="eyebrow">Workspace console</p>
-              <h1>{user?.fullName || user?.username || 'KigenTask User'}</h1>
+              <p className="eyebrow">Team workspace</p>
+              <h1>{user?.fullName || user?.username || 'Welcome'}</h1>
               <p className="hint">{user?.email}</p>
             </div>
           </div>
@@ -480,6 +519,15 @@ export function DashboardPage() {
             Sign out
           </button>
         </header>
+
+        {notice ? (
+          <AppAlert
+            variant={notice.variant}
+            title={notice.title}
+            message={notice.message}
+            onClose={() => setNotice(null)}
+          />
+        ) : null}
 
         <section className="stats-grid">
           <article className="stat-card">
@@ -490,12 +538,12 @@ export function DashboardPage() {
           <article className="stat-card">
             <p className="stat-label">Open tasks</p>
             <p className="stat-value">{openTasksCount}</p>
-            <p className="hint">Current selected project</p>
+            <p className="hint">{selectedProject ? `In ${selectedProject.projectKey}` : 'Select a project'}</p>
           </article>
           <article className="stat-card">
             <p className="stat-label">Completed tasks</p>
             <p className="stat-value">{doneTasksCount}</p>
-            <p className="hint">Current selected project</p>
+            <p className="hint">{selectedProject ? `In ${selectedProject.projectKey}` : 'Select a project'}</p>
           </article>
         </section>
 
@@ -570,7 +618,14 @@ export function DashboardPage() {
               </button>
             </div>
 
-            {projectsError ? <p className="error-banner">{projectsError}</p> : null}
+            {projectsError ? (
+              <AppAlert
+                variant="error"
+                title="Project action failed"
+                message={projectsError}
+                onClose={() => setProjectsError(null)}
+              />
+            ) : null}
 
             {projectsLoading ? <p className="hint">Loading projects...</p> : null}
 
@@ -589,7 +644,7 @@ export function DashboardPage() {
                   >
                     <p className="project-key">{project.projectKey}</p>
                     <p className="project-name">{project.name}</p>
-                    <p className="project-description">{project.description || 'No description'}</p>
+                    <p className="project-description">{project.description || 'No description provided'}</p>
                   </button>
 
                   <div className="item-actions">
@@ -681,7 +736,14 @@ export function DashboardPage() {
               </form>
             ) : null}
 
-            {tasksError ? <p className="error-banner">{tasksError}</p> : null}
+            {tasksError ? (
+              <AppAlert
+                variant="error"
+                title="Task action failed"
+                message={tasksError}
+                onClose={() => setTasksError(null)}
+              />
+            ) : null}
 
             {tasksLoading ? <p className="hint">Loading tasks...</p> : null}
 
@@ -698,7 +760,7 @@ export function DashboardPage() {
                     onClick={() => setSelectedTaskId(task.id)}
                   >
                     <p className="project-name">{task.title}</p>
-                    <p className="project-description">{task.description || 'No description'}</p>
+                    <p className="project-description">{task.description || 'No description provided'}</p>
                     <div className="chip-row">
                       <span className="chip">{STATUS_LABEL[task.status]}</span>
                       <span className="chip">{PRIORITY_LABEL[task.priority]}</span>
@@ -754,7 +816,7 @@ export function DashboardPage() {
           <article className="card">
             <div className="card-title-row">
               <h2>Comments</h2>
-              {selectedTask ? <p className="hint project-tag">Task #{selectedTask.id}</p> : null}
+              {selectedTask ? <p className="hint project-tag">{STATUS_LABEL[selectedTask.status]}</p> : null}
             </div>
 
             {!selectedTask ? <p className="hint">Select a task to read and add comments.</p> : null}
@@ -762,9 +824,16 @@ export function DashboardPage() {
             {selectedTask ? (
               <>
                 <p className="project-name">{selectedTask.title}</p>
-                <p className="hint">{selectedTask.description || 'No task description'}</p>
+                <p className="hint">{selectedTask.description || 'No details were added for this task yet'}</p>
 
-                {commentsError ? <p className="error-banner">{commentsError}</p> : null}
+                {commentsError ? (
+                  <AppAlert
+                    variant="error"
+                    title="Comment action failed"
+                    message={commentsError}
+                    onClose={() => setCommentsError(null)}
+                  />
+                ) : null}
                 {commentsLoading ? <p className="hint">Loading comments...</p> : null}
 
                 {!commentsLoading && comments.length === 0 ? (
@@ -775,7 +844,7 @@ export function DashboardPage() {
                   {comments.map((comment) => (
                     <li key={comment.id} className="comment-item">
                       <p className="comment-content">{comment.content}</p>
-                      <p className="hint mono">By user #{comment.authorUserId}</p>
+                      <p className="hint mono">{formatDateTimeLabel(comment.createdAt)}</p>
                     </li>
                   ))}
                 </ul>
@@ -801,6 +870,23 @@ export function DashboardPage() {
           </article>
         </section>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title ?? 'Confirm action'}
+        message={confirmState?.message ?? ''}
+        confirmLabel="Delete"
+        cancelLabel="Keep"
+        loading={confirmSubmitting}
+        onConfirm={() => {
+          void handleConfirmAction()
+        }}
+        onCancel={() => {
+          if (!confirmSubmitting) {
+            setConfirmState(null)
+          }
+        }}
+      />
     </main>
   )
 }

@@ -1,6 +1,7 @@
 package com.kigentask.controller;
 
 import com.kigentask.dto.auth.AuthResponse;
+import com.kigentask.dto.auth.GoogleLoginRequest;
 import com.kigentask.dto.auth.LoginRequest;
 import com.kigentask.dto.auth.RegisterRequest;
 import com.kigentask.service.AuthService;
@@ -30,5 +31,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
     }
 }

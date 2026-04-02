@@ -2,6 +2,7 @@ package com.kigentask.service;
 
 import com.kigentask.dto.project.CreateProjectRequest;
 import com.kigentask.dto.project.ProjectResponse;
+import com.kigentask.dto.project.UpdateProjectRequest;
 import com.kigentask.exception.BadRequestException;
 import com.kigentask.exception.ConflictException;
 import com.kigentask.exception.NotFoundException;
@@ -58,6 +59,45 @@ public class ProjectService {
         return toResponse(project);
     }
 
+    public ProjectResponse updateProject(Long projectId, UpdateProjectRequest request) {
+        Long currentUserId = currentUserService.getCurrentUserId();
+        Project project = projectRepository.findByIdAndOwnerId(projectId, currentUserId)
+                .orElseThrow(() -> new NotFoundException("Project not found"));
+
+        if (hasNoUpdates(request)) {
+            throw new BadRequestException("At least one field must be provided to update");
+        }
+
+        if (request.name() != null) {
+            String normalizedName = normalizeRequired(request.name(), "name");
+            if (projectRepository.existsByOwnerIdAndNameAndIdNot(currentUserId, normalizedName, projectId)) {
+                throw new ConflictException("You already have a project with this name");
+            }
+            project.setName(normalizedName);
+        }
+
+        if (request.projectKey() != null) {
+            String normalizedKey = normalizeProjectKey(request.projectKey());
+            if (projectRepository.existsByProjectKeyAndIdNot(normalizedKey, projectId)) {
+                throw new ConflictException("Project key is already in use");
+            }
+            project.setProjectKey(normalizedKey);
+        }
+
+        if (request.description() != null) {
+            project.setDescription(normalizeOptional(request.description()));
+        }
+
+        return toResponse(projectRepository.save(project));
+    }
+
+    public void deleteProject(Long projectId) {
+        Long currentUserId = currentUserService.getCurrentUserId();
+        Project project = projectRepository.findByIdAndOwnerId(projectId, currentUserId)
+                .orElseThrow(() -> new NotFoundException("Project not found"));
+        projectRepository.delete(project);
+    }
+
     private ProjectResponse toResponse(Project project) {
         return new ProjectResponse(
                 project.getId(),
@@ -87,5 +127,11 @@ public class ProjectService {
         }
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private boolean hasNoUpdates(UpdateProjectRequest request) {
+        return request.name() == null
+                && request.projectKey() == null
+                && request.description() == null;
     }
 }

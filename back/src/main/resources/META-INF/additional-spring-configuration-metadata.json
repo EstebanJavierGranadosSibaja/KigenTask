@@ -9,6 +9,21 @@
       "name": "app.jwt.expiration-ms",
       "type": "java.lang.Long",
       "description": "JWT expiration time in milliseconds."
+    },
+    {
+      "name": "app.cors.allowed-origins",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Allowed origins for browser clients consuming the API."
+    },
+    {
+      "name": "app.google.client-id",
+      "type": "java.lang.String",
+      "description": "Google OAuth Client ID used to validate incoming Google ID tokens."
+    },
+    {
+      "name": "app.google.token-info-url",
+      "type": "java.lang.String",
+      "description": "Google token introspection endpoint used to validate ID tokens."
     }
   ]
 }

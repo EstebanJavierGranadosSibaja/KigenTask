@@ -175,7 +175,10 @@ export function LoginPage() {
 
   return (
     <main className="screen login-screen">
-      <section className="panel login-shell">
+      <div className="login-orb orb-a" aria-hidden="true" />
+      <div className="login-orb orb-b" aria-hidden="true" />
+
+      <section className="panel login-shell glass-panel">
         <aside className="login-aside">
           <p className="eyebrow">KigenTask Workspace</p>
           <h1>Organize work that actually moves</h1>

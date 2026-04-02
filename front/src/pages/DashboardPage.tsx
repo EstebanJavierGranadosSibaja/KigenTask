@@ -505,7 +505,8 @@ export function DashboardPage() {
 
   return (
     <main className="screen">
-      <section className="panel dashboard-panel">
+      <div className="dashboard-ribbon" aria-hidden="true" />
+      <section className="panel dashboard-panel glass-panel">
         <header className="dashboard-header">
           <div className="identity">
             <div className="avatar">{initials}</div>

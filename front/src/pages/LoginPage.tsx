@@ -301,6 +301,15 @@ export function LoginPage() {
               {isSubmitting ? (isRegisterMode ? 'Creating account...' : 'Signing in...') : isRegisterMode ? 'Create account' : 'Sign in'}
             </button>
 
+            <button
+              className="secondary-button auth-switch-cta"
+              type="button"
+              onClick={() => switchMode(isRegisterMode ? 'login' : 'register')}
+              disabled={isSubmitting || isGoogleSubmitting}
+            >
+              {isRegisterMode ? 'Already have an account? Sign in' : 'Need an account? Register'}
+            </button>
+
             <div className="oauth-divider">
               <span>or continue with</span>
             </div>

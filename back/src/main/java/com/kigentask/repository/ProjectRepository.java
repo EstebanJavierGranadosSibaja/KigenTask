@@ -14,4 +14,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     boolean existsByProjectKey(String projectKey);
 
     boolean existsByOwnerIdAndName(Long ownerId, String name);
+
+    boolean existsByProjectKeyAndIdNot(String projectKey, Long id);
+
+    boolean existsByOwnerIdAndNameAndIdNot(Long ownerId, String name, Long id);
 }

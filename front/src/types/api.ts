@@ -29,3 +29,30 @@ export type Project = {
   createdAt: string
   updatedAt: string
 }
+
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'CANCELLED'
+
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+export type Task = {
+  id: number
+  projectId: number
+  reporterUserId: number
+  assigneeUserId: number | null
+  title: string
+  description: string | null
+  status: TaskStatus
+  priority: TaskPriority
+  dueDate: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type TaskComment = {
+  id: number
+  taskId: number
+  authorUserId: number
+  content: string
+  createdAt: string
+  updatedAt: string
+}

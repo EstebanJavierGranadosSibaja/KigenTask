@@ -9,10 +9,11 @@ Frontend base en React + TypeScript para consumir la API de KigenTask con autent
 - Login con Google conectado a `/api/v1/auth/google`
 - Session bootstrap con token en `localStorage`
 - Ruta protegida para dashboard
-- Dashboard inicial con:
+- Dashboard con gestion real:
   - perfil autenticado (`/api/v1/users/me`)
-  - listado de proyectos (`GET /api/v1/projects`)
-  - creacion de proyecto (`POST /api/v1/projects`)
+  - CRUD de proyectos (`GET/POST/PUT/DELETE /api/v1/projects`)
+  - CRUD de tareas por proyecto (`GET/POST/PUT/DELETE /api/v1/tasks`)
+  - comentarios por tarea (`GET/POST /api/v1/tasks/{taskId}/comments`)
 
 ## Requisitos
 

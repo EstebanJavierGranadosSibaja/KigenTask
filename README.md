@@ -98,6 +98,8 @@ Useful commands:
   - `POST /api/v1/projects`
   - `GET /api/v1/projects`
   - `GET /api/v1/projects/{projectId}`
+  - `PUT /api/v1/projects/{projectId}`
+  - `DELETE /api/v1/projects/{projectId}`
 - Tasks:
   - `POST /api/v1/tasks`
   - `PUT /api/v1/tasks/{taskId}`

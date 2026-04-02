@@ -233,7 +233,8 @@ body {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -245,11 +246,16 @@ body {
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(14, 116, 144, 0.18);
   transform: translateY(-1px);
+}
+
+.field-control {
+  appearance: none;
 }
 
 .primary-button,
@@ -403,6 +409,113 @@ body {
   background: linear-gradient(145deg, #fbfdff 0%, #fcfdfd 100%);
 }
 
+.project-item.selected {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line) 45%);
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.12);
+}
+
+.item-main-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
+.item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.task-actions {
+  margin-top: 0.65rem;
+}
+
+.small {
+  padding: 0.45rem 0.62rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.danger {
+  color: #a91d1d;
+  border-color: rgba(169, 29, 29, 0.28);
+  background: rgba(169, 29, 29, 0.08);
+}
+
+.danger:hover:not(:disabled) {
+  background: rgba(169, 29, 29, 0.14);
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.split-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.project-tag {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.chip-row {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.16rem 0.52rem;
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+  background: #fff;
+}
+
+.inline-select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.38rem 0.55rem;
+  font: inherit;
+  color: var(--ink-strong);
+  background: #fff;
+}
+
+.comment-list {
+  list-style: none;
+  margin: 0.95rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.comment-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: #fff;
+}
+
+.comment-content {
+  margin: 0;
+}
+
 .project-key {
   margin: 0;
   color: var(--accent);
@@ -454,6 +567,10 @@ body {
 
   .stats-grid,
   .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .split-fields {
     grid-template-columns: 1fr;
   }
 }

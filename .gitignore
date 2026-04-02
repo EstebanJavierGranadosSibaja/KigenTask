@@ -7,6 +7,7 @@ Thumbs.db
 
 # Root environment
 .env
+.env.production
 target/
 
 # Backend (back)

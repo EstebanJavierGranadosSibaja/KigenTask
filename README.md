@@ -128,3 +128,33 @@ Minimum production checklist before deploy:
 - Use strong secrets for JWT and database.
 - Set production Google OAuth origins and consent screen.
 - Add HTTPS reverse proxy (Nginx/Traefik) and domain.
+
+## Production Deploy (Docker)
+
+Production files added:
+
+- `docker-compose.prod.yml`
+- `.env.production.example`
+
+Recommended steps on server:
+
+1. Copy `.env.production.example` to `.env.production`.
+1. Replace all placeholder values (especially `POSTGRES_PASSWORD` and `JWT_SECRET`).
+1. Set your real domains in `CORS_ALLOWED_ORIGINS` and `VITE_API_BASE_URL`.
+1. Deploy:
+   - `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`
+1. Verify:
+   - `docker compose -f docker-compose.prod.yml --env-file .env.production ps`
+  - PowerShell: `Invoke-WebRequest -UseBasicParsing http://localhost:8080/api/v1/health`
+  - Bash: `curl http://localhost:${API_PORT:-8080}/api/v1/health`
+
+To stop production stack:
+
+- `docker compose -f docker-compose.prod.yml --env-file .env.production down`
+
+JWT secret quick generation examples:
+
+- PowerShell:
+  - `[Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }))`
+- OpenSSL:
+  - `openssl rand -base64 64`

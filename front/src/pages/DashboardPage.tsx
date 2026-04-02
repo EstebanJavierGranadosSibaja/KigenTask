@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppAlert, type AlertVariant } from '../components/AppAlert'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { useAuth } from '../context/useAuth'
 import { apiRequest } from '../lib/api'
 import type { Project, Task, TaskComment, TaskPriority, TaskStatus } from '../types/api'
@@ -516,9 +517,12 @@ export function DashboardPage() {
               <p className="hint">{user?.email}</p>
             </div>
           </div>
-          <button className="secondary-button" onClick={handleLogout}>
-            Sign out
-          </button>
+          <div className="header-actions">
+            <ThemeToggle />
+            <button className="secondary-button" onClick={handleLogout}>
+              Sign out
+            </button>
+          </div>
         </header>
 
         {notice ? (

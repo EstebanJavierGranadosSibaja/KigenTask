@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppAlert } from '../components/AppAlert'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { useAuth } from '../context/useAuth'
 
 type AuthMode = 'login' | 'register'
@@ -25,7 +26,6 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() ?? ''
   const googleButtonRef = useRef<HTMLDivElement | null>(null)
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
   const isRegisterMode = mode === 'register'
 
   function switchMode(nextMode: AuthMode) {
@@ -198,6 +198,10 @@ export function LoginPage() {
         </aside>
 
         <section className="login-panel">
+          <div className="login-panel-head">
+            <ThemeToggle />
+          </div>
+
           <div className="brand-block">
             <h2>{isRegisterMode ? 'Create your account' : 'Sign in to your workspace'}</h2>
             <p className="hint">
@@ -326,33 +330,18 @@ export function LoginPage() {
             >
               {isRegisterMode ? 'Already have an account? Sign in' : 'Need an account? Register'}
             </button>
-
-            <div className="oauth-divider">
-              <span>or continue with</span>
-            </div>
-
             {googleClientId ? (
-              <div className="google-signin-block">
-                <div ref={googleButtonRef} className="google-button-slot" />
-                {isGoogleSubmitting ? <p className="hint">Signing in with Google...</p> : null}
-                <AppAlert
-                  variant="info"
-                  title="Google sign-in setup"
-                  message={
-                    <>
-                      If Google shows <strong>invalid_client</strong> or <strong>no registered origin</strong>,
-                      add <span className="mono-inline">{currentOrigin}</span> to Authorized JavaScript origins.
-                    </>
-                  }
-                />
-              </div>
-            ) : (
-              <AppAlert
-                variant="warning"
-                title="Google login disabled"
-                message="Set VITE_GOOGLE_CLIENT_ID in your frontend environment to enable Google sign-in."
-              />
-            )}
+              <>
+                <div className="oauth-divider">
+                  <span>or continue with</span>
+                </div>
+
+                <div className="google-signin-block">
+                  <div ref={googleButtonRef} className="google-button-slot" />
+                  {isGoogleSubmitting ? <p className="hint">Signing in with Google...</p> : null}
+                </div>
+              </>
+            ) : null}
           </form>
         </section>
       </section>
